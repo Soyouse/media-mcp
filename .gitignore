@@ -1,0 +1,10 @@
+node_modules/
+.secrets.json
+service.env
+reports/
+.stryker-tmp/
+*.log
+.DS_Store
+
+deploy.tar.gz
+*.tar.gz

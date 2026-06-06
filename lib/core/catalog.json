@@ -1,0 +1,85 @@
+{
+  "_note": "Catalogue auto-enseignant. Source = docs.x.ai/developers/rest-api-reference (confirmé) + appels prouvés live. Provider par défaut = Grok/xAI, base_url https://api.x.ai/v1 (les `path` ci-dessous sont RELATIFS à base_url). API 'full compatibility OpenAI REST'. Auth (Bearer) gérée par le MCP. media_call = passe-plat 100% : tout endpoint marche, catalogue ou non. Génération vidéo = ASYNC : POST /videos/generations -> { request_id } -> poller GET /videos/{request_id} jusqu'à status='done'. Image = synchrone.",
+  "models": [
+    { "method": "GET", "path": "/models", "desc": "Liste des modèles disponibles (OpenAI-compatible). Sert aussi à PROUVER la clé (media_switch_provider). Retourne { data: [{ id, ... }] }." }
+  ],
+  "image": [
+    {
+      "method": "POST",
+      "path": "/images/generations",
+      "desc": "Génère une image (synchrone, OpenAI-compatible). Modèles : grok-imagine-image (0,02$), grok-imagine-image-pro (0,07$), grok-imagine-image-quality (Quality Mode, réalisme max). Sortie poids OUVERTS Grok : strip métadonnée côté pipeline avant upload social (zéro watermark/C2PA).",
+      "params": {
+        "model": "grok-imagine-image | grok-imagine-image-pro | grok-imagine-image-quality",
+        "prompt": "string REQUIS — description de l'image",
+        "n": "int opt — nombre d'images",
+        "response_format": "'url' (défaut) | 'b64_json'",
+        "aspect_ratio": "opt — '1:1' | '16:9' | '9:16' | '4:3' | '3:4' | ...",
+        "resolution": "opt — résolution cible"
+      },
+      "returns": "{ data: [{ url, b64_json, mime_type }], usage: { cost_in_usd_ticks } }",
+      "example": {
+        "model": "grok-imagine-image",
+        "prompt": "photo studio d'un cafe latte art, lumiere chaude, ultra realiste",
+        "n": 1,
+        "response_format": "url",
+        "aspect_ratio": "1:1"
+      }
+    }
+  ],
+  "video": [
+    {
+      "method": "POST",
+      "path": "/videos/generations",
+      "desc": "Génère une vidéo depuis texte (+ image optionnelle). ASYNC → renvoie { request_id }. Poller GET /videos/{request_id}. Modèle grok-imagine-video (audio inclus).",
+      "params": {
+        "model": "grok-imagine-video",
+        "prompt": "string REQUIS — description de la vidéo",
+        "image": "opt — { url } ou { file_id } pour image-to-video",
+        "duration": "int opt 1-15 (défaut 8) — secondes",
+        "resolution": "'480p' | '720p' | '1080p'",
+        "aspect_ratio": "'9:16' (reels/tiktok) | '16:9' | '1:1' | ..."
+      },
+      "returns": "{ request_id }",
+      "example": {
+        "model": "grok-imagine-video",
+        "prompt": "un barista verse un cafe, ralenti cinematique",
+        "duration": 5,
+        "resolution": "720p",
+        "aspect_ratio": "9:16"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/videos/{request_id}",
+      "desc": "Statut/résultat d'une génération vidéo. status = 'pending' | 'done' | 'failed' ; progress 0-100 ; video.url quand done.",
+      "returns": "{ status, progress, video: { url, duration }, usage: { cost_in_usd_ticks } }"
+    },
+    {
+      "method": "POST",
+      "path": "/videos/edits",
+      "desc": "Modifie une vidéo existante via prompt. ASYNC (même flux request_id).",
+      "params": {
+        "model": "grok-imagine-video",
+        "prompt": "string REQUIS — modification à appliquer",
+        "video": "opt — référence vidéo source ({ url } ou { file_id })"
+      },
+      "example": { "model": "grok-imagine-video", "prompt": "ajoute une ambiance nocturne neon" }
+    },
+    {
+      "method": "POST",
+      "path": "/videos/extensions",
+      "desc": "Prolonge une vidéo générée de 1-10s avec un prompt de suite. ASYNC (request_id).",
+      "params": {
+        "model": "grok-imagine-video",
+        "prompt": "string REQUIS — suite à générer",
+        "duration": "int opt 1-10 — secondes de prolongation"
+      },
+      "example": { "model": "grok-imagine-video", "prompt": "la camera recule pour devoiler la salle", "duration": 5 }
+    }
+  ],
+  "_todo": {
+    "audio_tts": "Text-to-Speech xAI (4,20$/M caracteres) + clonage de voix (gratuit, <2min). Chemin exact a confirmer sur docs.x.ai/developers/rest-api-reference (section audio) avant usage.",
+    "audio_stt": "Speech-to-Text (25 langues, streaming). Chemin exact a confirmer avant usage.",
+    "voice_agent": "Voice Agent API (0,05$/min, OpenAI Realtime compatible wss://api.x.ai/v1/realtime, telephonie Twilio/Vonage). Projet separe (agent vocal), pas un endpoint REST classique."
+  }
+}
