@@ -7,22 +7,51 @@
     {
       "method": "POST",
       "path": "/images/generations",
-      "desc": "Génère une image (synchrone, OpenAI-compatible). Modèles : grok-imagine-image (0,02$), grok-imagine-image-pro (0,07$), grok-imagine-image-quality (Quality Mode, réalisme max). Sortie poids OUVERTS Grok : strip métadonnée côté pipeline avant upload social (zéro watermark/C2PA).",
+      "desc": "Génère une image SANS référence (synchrone, OpenAI-compatible). Modèles : grok-imagine-image (0,02$), grok-imagine-image-pro (0,07$), grok-imagine-image-quality (Quality Mode, réalisme max). PAS de negative_prompt ni seed (contraintes négatives en langage naturel dans le prompt). Sortie poids OUVERTS Grok : strip métadonnée côté pipeline avant upload social (zéro watermark/C2PA).",
       "params": {
         "model": "grok-imagine-image | grok-imagine-image-pro | grok-imagine-image-quality",
         "prompt": "string REQUIS — description de l'image",
         "n": "int opt — nombre d'images",
         "response_format": "'url' (défaut) | 'b64_json'",
-        "aspect_ratio": "opt — '1:1' | '16:9' | '9:16' | '4:3' | '3:4' | ...",
-        "resolution": "opt — résolution cible"
+        "aspect_ratio": "opt — '1:1'|'3:4'|'4:3'|'9:16'|'16:9'|'2:3'|'3:2'|'9:19.5'|'19.5:9'|'9:20'|'20:9'|'1:2'|'2:1'|'auto'",
+        "resolution": "opt — '1k' | '2k'",
+        "service_tier": "opt — 'default' | 'priority'"
       },
-      "returns": "{ data: [{ url, b64_json, mime_type }], usage: { cost_in_usd_ticks } }",
+      "returns": "{ data: [{ url, b64_json, mime_type }], usage: { cost_in_usd_ticks } } — 1$ = 10_000_000_000 ticks",
       "example": {
         "model": "grok-imagine-image",
         "prompt": "photo studio d'un cafe latte art, lumiere chaude, ultra realiste",
         "n": 1,
         "response_format": "url",
         "aspect_ratio": "1:1"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/images/edits",
+      "desc": "Génère une image CONDITIONNÉE par 1 à 3 images de référence (#3 produit, #4 humain). 'edit' = nomenclature xAI pour génération guidée par image source, PAS retouche. ⚠️ PAS de syntaxe @imageN (ça = UI Imagine, pas l'API) : les réfs sont reliées par l'ORDRE dans images[] + description en langage naturel ('the person in the reference photos', 'the product shown'). base64 data-URI accepté dans 'url'. Pour la fidélité visage : mettre face en images[0], décrire 'keep facial features faithful to the reference'.",
+      "params": {
+        "model": "grok-imagine-image-quality (recommandé réalisme/visage) | grok-imagine-image | grok-imagine-image-pro",
+        "prompt": "string REQUIS — scène + référence en langage naturel (jamais @imageN)",
+        "image": "opt — { url } ou { file_id } (réf unique)",
+        "images": "opt — array ordonné de { type:'image_url', url } (jusqu'à 3 réfs ; alternative à 'image'). url = URL publique OU data:image/...;base64,XXXX",
+        "n": "int opt",
+        "response_format": "'url' (défaut) | 'b64_json'",
+        "aspect_ratio": "opt — mêmes valeurs que /images/generations",
+        "resolution": "opt — '1k' | '2k'",
+        "service_tier": "opt — 'default' | 'priority'"
+      },
+      "returns": "{ data: [{ url, b64_json, mime_type }], usage: { cost_in_usd_ticks } }",
+      "example": {
+        "model": "grok-imagine-image-quality",
+        "prompt": "Candid portrait of the person in the reference photos, sitting at a cafe, natural window light, shot on iPhone, keep facial features faithful to the reference.",
+        "images": [
+          { "type": "image_url", "url": "data:image/jpeg;base64,<FACE_B64>" },
+          { "type": "image_url", "url": "data:image/jpeg;base64,<PROFIL_B64>" }
+        ],
+        "aspect_ratio": "3:4",
+        "resolution": "2k",
+        "response_format": "b64_json"
       }
     }
   ],
