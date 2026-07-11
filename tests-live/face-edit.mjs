@@ -12,8 +12,8 @@ import { readFile, writeFile, appendFile, mkdir } from "node:fs/promises";
 import { join } from "node:path";
 
 const RESOLUTION = (process.argv[2] || "1k").toLowerCase();
-const DATASET = "C:/Users/theoj/Downloads/data-pour-photo";
-const SHOTS = "D:/Screenshots";
+const DATASET = process.env.FACE_DATASET_DIR || "./tests-live/dataset";
+const SHOTS = process.env.SHOTS_DIR || "./tests-live/out";
 const RUNLOG = new URL("./run-log.md", import.meta.url);
 
 // ⚠️ RÈGLE (apprise du test #1) : TOUJOURS passer toutes les vues dispo, jamais en écarter une sur intuition.
